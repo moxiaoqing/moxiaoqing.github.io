@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+<title>自己动手封装RecyclerView.Adapter - 沉睡的季节个人博客</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+    <meta name="description" content="RecyclerView封装了ViewHolder的回收复用，也就是说RecyclerView标准化了ViewHolder，编写Adapter面向的是ViewHolder而不再是View了，复用的逻辑被封装了，写起来更加简单。直接省去了ListView中convertView.setTag(holder)和convertView.getTag()这些繁琐的步骤。">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自己动手封装RecyclerView.Adapter">
+<meta property="og:url" content="/2019/05/18/自己动手封装RecyclerView-Adapter/index.html">
+<meta property="og:site_name" content="沉睡的季节个人博客">
+<meta property="og:description" content="RecyclerView封装了ViewHolder的回收复用，也就是说RecyclerView标准化了ViewHolder，编写Adapter面向的是ViewHolder而不再是View了，复用的逻辑被封装了，写起来更加简单。直接省去了ListView中convertView.setTag(holder)和convertView.getTag()这些繁琐的步骤。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="/images/og_image.png">
+<meta property="og:updated_time" content="2019-05-20T09:35:50.842Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="自己动手封装RecyclerView.Adapter">
+<meta name="twitter:description" content="RecyclerView封装了ViewHolder的回收复用，也就是说RecyclerView标准化了ViewHolder，编写Adapter面向的是ViewHolder而不再是View了，复用的逻辑被封装了，写起来更加简单。直接省去了ListView中convertView.setTag(holder)和convertView.getTag()这些繁琐的步骤。">
+<meta name="twitter:image" content="/images/og_image.png">
+
+
+
+
+
+
+
+<link rel="icon" href="/images/favicon.svg">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.7.2/css/bulma.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,600|Source+Code+Pro">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css">
+
+
+    
+    
+    
+    <style>body>.footer,body>.navbar,body>.section{opacity:0}</style>
+    
+
+    
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/css/lightgallery.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/css/justifiedGallery.min.css">
+    
+
+    
+    
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.css">
+
+
+    
+    
+    
+    
+
+<link rel="stylesheet" href="/css/back-to-top.css">
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+<link rel="stylesheet" href="/css/progressbar.css">
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+    
+    
+    
+
+    
+    
+    
+
+
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="is-3-column">
+    <nav class="navbar navbar-main">
+    <div class="container">
+        <div class="navbar-brand is-flex-center">
+            <a class="navbar-item navbar-logo" href="/">
+            
+                <img src="/images/logo.svg" alt="自己动手封装RecyclerView.Adapter" height="28">
+            
+            </a>
+        </div>
+        <div class="navbar-menu">
+            
+            <div class="navbar-start">
+                
+                <a class="navbar-item" href="/">Home</a>
+                
+                <a class="navbar-item" href="/archives">Archives</a>
+                
+                <a class="navbar-item" href="/categories">Categories</a>
+                
+                <a class="navbar-item" href="/tags">Tags</a>
+                
+                <a class="navbar-item" href="/about">About</a>
+                
+            </div>
+            
+            <div class="navbar-end">
+                
+                    
+                    
+                    <a class="navbar-item" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                    
+                
+                
+                
+                <a class="navbar-item search" title="搜索" href="javascript:;">
+                    <i class="fas fa-search"></i>
+                </a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-6-tablet is-6-desktop is-9-widescreen has-order-2 column-main"><div class="card">
+    
+    <div class="card-content article ">
+        
+        <div class="level article-meta is-size-7 is-uppercase is-mobile is-overflow-x-auto">
+            <div class="level-left">
+                <time class="level-item has-text-grey" datetime="2019-05-18T03:09:06.000Z">2019-05-18</time>
+                
+                <div class="level-item">
+                <a class="has-link-grey -link" href="/categories/android/">android</a>
+                </div>
+                
+                
+                <span class="level-item has-text-grey">
+                    
+                    
+                    5 分钟 读完 (大约 762 个字)
+                </span>
+                
+                
+            </div>
+        </div>
+        
+        <h1 class="title is-size-3 is-size-4-mobile has-text-weight-normal">
+            
+                自己动手封装RecyclerView.Adapter
+            
+        </h1>
+        <div class="content">
+            <p>RecyclerView封装了ViewHolder的回收复用，也就是说RecyclerView标准化了ViewHolder，编写Adapter面向的是ViewHolder而不再是View了，复用的逻辑被封装了，写起来更加简单。直接省去了ListView中convertView.setTag(holder)和convertView.getTag()这些繁琐的步骤。<br><a id="more"></a></p>
+<h3 id="提供了一种插拔式的体验，高度的解耦，异常的灵活，针对一个Item的显示RecyclerView专门抽取出了相应的类，来控制Item的显示，使其的扩展性非常强。"><a href="#提供了一种插拔式的体验，高度的解耦，异常的灵活，针对一个Item的显示RecyclerView专门抽取出了相应的类，来控制Item的显示，使其的扩展性非常强。" class="headerlink" title="提供了一种插拔式的体验，高度的解耦，异常的灵活，针对一个Item的显示RecyclerView专门抽取出了相应的类，来控制Item的显示，使其的扩展性非常强。"></a>提供了一种插拔式的体验，高度的解耦，异常的灵活，针对一个Item的显示RecyclerView专门抽取出了相应的类，来控制Item的显示，使其的扩展性非常强。</h3><h3 id="设置布局管理器以控制Item的布局方式，横向、竖向以及瀑布流方式"><a href="#设置布局管理器以控制Item的布局方式，横向、竖向以及瀑布流方式" class="headerlink" title="设置布局管理器以控制Item的布局方式，横向、竖向以及瀑布流方式"></a>设置布局管理器以控制Item的布局方式，横向、竖向以及瀑布流方式</h3><h3 id="可设置Item的间隔样式（可绘制），通过继承RecyclerView的ItemDecoration这个类，然后针对自己的业务需求去书写代码。"><a href="#可设置Item的间隔样式（可绘制），通过继承RecyclerView的ItemDecoration这个类，然后针对自己的业务需求去书写代码。" class="headerlink" title="可设置Item的间隔样式（可绘制），通过继承RecyclerView的ItemDecoration这个类，然后针对自己的业务需求去书写代码。"></a>可设置Item的间隔样式（可绘制），通过继承RecyclerView的ItemDecoration这个类，然后针对自己的业务需求去书写代码。</h3><h3 id="可以控制Item增删的动画，可以通过ItemAnimator这个类进行控制，当然针对增删的动画，RecyclerView有其自己默认的实现。"><a href="#可以控制Item增删的动画，可以通过ItemAnimator这个类进行控制，当然针对增删的动画，RecyclerView有其自己默认的实现。" class="headerlink" title="可以控制Item增删的动画，可以通过ItemAnimator这个类进行控制，当然针对增删的动画，RecyclerView有其自己默认的实现。"></a>可以控制Item增删的动画，可以通过ItemAnimator这个类进行控制，当然针对增删的动画，RecyclerView有其自己默认的实现。</h3><figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 自定义封装RecyclerView.Adapter</span><br><span class="line"> */</span><br><span class="line">abstract class RecyclerViewAdapter&lt;M&gt; : RecyclerView.Adapter&lt;RecyclerViewHolder&gt;() &#123;</span><br><span class="line"></span><br><span class="line">    companion object &#123;</span><br><span class="line">        /**</span><br><span class="line">         * 加载中</span><br><span class="line">         */</span><br><span class="line">        private const val LOADING = 0</span><br><span class="line">        /**</span><br><span class="line">         * 加载失败</span><br><span class="line">         */</span><br><span class="line">        private const val LOAD_FAILURE = 1</span><br><span class="line">        /**</span><br><span class="line">         * 全部加载完成</span><br><span class="line">         */</span><br><span class="line">        private const val LOAD_COMPLETE = 2</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    abstract val models: List&lt;M&gt;</span><br><span class="line">    private var isEnableLoadMore: Boolean = <span class="hljs-literal">false</span></span><br><span class="line">    private var mOnLoadMoreListener: OnLoadMoreListener? = null</span><br><span class="line">    private var mOnItemClickListener: OnItemClickListener? = null</span><br><span class="line">    private var mOnItemLongClickListener: OnItemLongClickListener? = null</span><br><span class="line">    private var mLoadStatus: Int = LOADING</span><br><span class="line"></span><br><span class="line">    fun setLoadMoreComplete(hasMore: Boolean) &#123;</span><br><span class="line">        this.isEnableLoadMore = hasMore</span><br><span class="line">        this.mLoadStatus = <span class="hljs-keyword">if</span> (hasMore) LOADING <span class="hljs-keyword">else</span> LOAD_COMPLETE</span><br><span class="line">        notifyDataSetChanged()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun <span class="hljs-function"><span class="hljs-title">setLoadMoreFailure</span></span>() &#123;</span><br><span class="line">        this.mLoadStatus = LOAD_FAILURE</span><br><span class="line">        notifyItemChanged(itemCount - 1)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setOnLoadMoreListener(listener: OnLoadMoreListener) &#123;</span><br><span class="line">        this.mOnLoadMoreListener = listener</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setOnItemClickListener(listener: OnItemClickListener) &#123;</span><br><span class="line">        this.mOnItemClickListener = listener</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setOnItemLongClickListener(listener: OnItemLongClickListener) &#123;</span><br><span class="line">        this.mOnItemLongClickListener = listener</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    override fun getItemViewType(position: Int): Int &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (this.isEnableLoadMore &amp;&amp; position == this.models.size) &#123;</span><br><span class="line">            <span class="hljs-built_in">return</span> R.layout.rv_load_more</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-built_in">return</span> getItemViewLayout(position)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerViewHolder &#123;</span><br><span class="line">        val inflater = LayoutInflater.from(parent.context)</span><br><span class="line">        val view = inflater.inflate(viewType, parent, <span class="hljs-literal">false</span>)</span><br><span class="line">        val holder = RecyclerViewHolder(view)</span><br><span class="line">        holder.itemView.setOnClickListener &#123;</span><br><span class="line">            val position = holder.adapterPosition</span><br><span class="line">            <span class="hljs-keyword">if</span> (position != RecyclerView.NO_POSITION) &#123;</span><br><span class="line">                mOnItemClickListener?.onItemClick(it, position)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        holder.itemView.setOnLongClickListener &#123;</span><br><span class="line">            val position = holder.adapterPosition</span><br><span class="line">            <span class="hljs-keyword">if</span> (position != RecyclerView.NO_POSITION) &#123;</span><br><span class="line">                mOnItemLongClickListener?.onItemLongClick(it, position)</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="hljs-literal">false</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-built_in">return</span> holder</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    override fun getItemCount(): Int &#123;</span><br><span class="line">        <span class="hljs-built_in">return</span> <span class="hljs-keyword">if</span> (this.isEnableLoadMore) this.models.size + 1 <span class="hljs-keyword">else</span> this.models.size</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    override fun onBindViewHolder(holder: RecyclerViewHolder, position: Int) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (getItemViewType(position) == R.layout.rv_load_more) &#123;</span><br><span class="line">            bindLoadMoreViewHolder(holder)</span><br><span class="line">        &#125; <span class="hljs-keyword">else</span> &#123;</span><br><span class="line">            convert(holder, this.models[position])</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private fun bindLoadMoreViewHolder(holder: RecyclerViewHolder) &#123;</span><br><span class="line">        holder.setText(R.id.load_status,</span><br><span class="line">                when (this.mLoadStatus) &#123;</span><br><span class="line">                    LOAD_FAILURE -&gt; R.string.load_failure</span><br><span class="line">                    LOAD_COMPLETE -&gt; R.string.load_complete</span><br><span class="line">                    <span class="hljs-keyword">else</span> -&gt; R.string.loading</span><br><span class="line">                &#125;)</span><br><span class="line">                .setVisibility(R.id.load_progress,</span><br><span class="line">                        <span class="hljs-keyword">if</span> (this.mLoadStatus == LOADING) View.VISIBLE <span class="hljs-keyword">else</span> View.GONE)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    override fun onViewAttachedToWindow(holder: RecyclerViewHolder) &#123;</span><br><span class="line">        <span class="hljs-keyword">if</span> (this.isEnableLoadMore &amp;&amp; holder.adapterPosition == itemCount - 1) &#123;</span><br><span class="line">            this.mOnLoadMoreListener?.onLoadMore()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 返回的是当前item的布局id</span><br><span class="line">     */</span><br><span class="line">    protected abstract fun getItemViewLayout(position: Int): Int</span><br><span class="line"></span><br><span class="line">    protected abstract fun convert(holder: RecyclerViewHolder, model: M)</span><br><span class="line"></span><br><span class="line">    interface OnLoadMoreListener &#123;</span><br><span class="line">        fun onLoadMore()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    interface OnItemClickListener &#123;</span><br><span class="line">        fun onItemClick(view: View, position: Int)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    interface OnItemLongClickListener &#123;</span><br><span class="line">        fun onItemLongClick(view: View, position: Int): Boolean</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash hljs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">open class RecyclerViewHolder(view: View) : RecyclerView.ViewHolder(view) &#123;</span><br><span class="line"></span><br><span class="line">    private val cache = SparseArray&lt;View&gt;()</span><br><span class="line">    val context: Context by lazy &#123; itemView.context &#125;</span><br><span class="line"></span><br><span class="line">    @Suppress(<span class="hljs-string">"UNCHECKED_CAST"</span>)</span><br><span class="line">    fun &lt;V : View&gt; getView(@IdRes id: Int): V &#123;</span><br><span class="line">        var view = cache.get(id)</span><br><span class="line">        <span class="hljs-keyword">if</span> (null == view) &#123;</span><br><span class="line">            view = itemView.findViewById(id)</span><br><span class="line">            cache.put(id, view)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="hljs-built_in">return</span> view as V</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setText(@IdRes id: Int, @StringRes text: Int): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;TextView&gt;(id).setText(text)</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setText(@IdRes id: Int, text: CharSequence): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;TextView&gt;(id).text = text</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setImageResource(@IdRes id: Int, @DrawableRes resId: Int): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;ImageView&gt;(id).setImageResource(resId)</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setImageBitmap(@IdRes id: Int, bitmap: Bitmap): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;ImageView&gt;(id).setImageBitmap(bitmap)</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setBackgroundColor(@IdRes id: Int, @ColorInt color: Int): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;View&gt;(id).setBackgroundColor(color)</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setBackgroundResource(@IdRes id: Int, @DrawableRes resId: Int): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;View&gt;(id).setBackgroundResource(resId)</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setVisibility(@IdRes id: Int, visibility: Int): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;View&gt;(id).visibility = visibility</span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fun setEnable(@IdRes id: Int, <span class="hljs-built_in">enable</span>: Boolean): RecyclerViewHolder &#123;</span><br><span class="line">        getView&lt;View&gt;(id).isEnabled = <span class="hljs-built_in">enable</span></span><br><span class="line">        <span class="hljs-built_in">return</span> this</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        </div>
+        
+        <div class="level is-size-7 is-uppercase">
+            <div class="level-start">
+                <div class="level-item">
+                    <span class="is-size-6 has-text-grey has-mr-7">#</span>
+                    <a class="has-link-grey -link" href="/tags/android/">android</a>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-content">
+        <h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3>
+        <div class="buttons is-centered">
+            
+                
+<div class="notification is-danger">
+    You forgot to set the <code>qrcode</code> for Alipay. Please set it in <code>_config.yml</code>.
+</div>
+
+                
+                
+<div class="notification is-danger">
+    You forgot to set the <code>qrcode</code> for Wechat. Please set it in <code>_config.yml</code>.
+</div>
+
+                
+                <!-- Visit https://www.paypal.com/donate/buttons/ to get your donate button -->
+
+<div class="notification is-danger">
+    You forgot to set the <code>business</code> and <code>currency_code</code> for Paypal. Please set it in <code>_config.yml</code>.
+</div>
+
+                
+                
+<div class="notification is-danger">
+    You forgot to set the <code>url</code> Patreon. Please set it in <code>_config.yml</code>.
+</div>
+
+                
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card card-transparent">
+    <div class="level post-navigation is-flex-wrap is-mobile">
+        
+        <div class="level-start">
+            <a class="level level-item has-link-grey  article-nav-prev" href="/2019/05/20/Android软键盘的显示和隐藏InputMethodManager/">
+                <i class="level-item fas fa-chevron-left"></i>
+                <span class="level-item">Android软键盘的显示和隐藏InputMethodManager</span>
+            </a>
+        </div>
+        
+        
+        <div class="level-end">
+            <a class="level level-item has-link-grey  article-nav-next" href="/2019/05/17/自定义LiveDataBus事件分发/">
+                <span class="level-item">自定义LiveDataBus事件分发</span>
+                <i class="level-item fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+
+</div>
+                
+
+
+
+
+
+
+
+<div class="column is-4-tablet is-4-desktop is-3-widescreen  has-order-3 column-left ">
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                    
+                        <img class="image is-128x128 has-mb-6" src="/images/avatar.jpg" alt="Your name">
+                    
+                    
+                    <p class="is-size-4 is-block">
+                        Your name
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-block">
+                        Your title
+                    </p>
+                    
+                    
+                    <p class="is-size-6 is-flex is-flex-center has-text-grey">
+                        <i class="fas fa-map-marker-alt has-mr-7"></i>
+                        <span>Your location</span>
+                    </p>
+                    
+                </div>
+            </div>
+        </nav>
+        <nav class="level is-mobile">
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        文章
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        13
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        分类
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        8
+                    </p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered is-marginless">
+                <div>
+                    <p class="heading">
+                        标签
+                    </p>
+                    <p class="title has-text-weight-normal">
+                        4
+                    </p>
+                </div>
+            </div>
+        </nav>
+        <div class="level">
+            <a class="level-item button is-link is-rounded" href="https://github.com/ppoffice" target="_blank">
+                关注我</a>
+        </div>
+        
+        
+        <div class="level is-mobile">
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Github" href="https://github.com/ppoffice">
+                
+                <i class="fab fa-github"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Facebook" href="https://facebook.com">
+                
+                <i class="fab fa-facebook"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Twitter" href="https://twitter.com">
+                
+                <i class="fab fa-twitter"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="Dribbble" href="https://dribbble.com">
+                
+                <i class="fab fa-dribbble"></i>
+                
+            </a>
+            
+            <a class="level-item button is-white is-marginless" target="_blank" title="RSS" href="/">
+                
+                <i class="fas fa-rss"></i>
+                
+            </a>
+            
+        </div>
+        
+    </div>
+</div>
+    
+        
+    
+        
+
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            链接
+        </h3>
+        <ul class="menu-list">
+        
+            <li>
+                <a class="level is-mobile" href="https://hexo.io" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">Hexo</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">hexo.io</span>
+                    </span>
+                </a>
+            </li>
+        
+            <li>
+                <a class="level is-mobile" href="https://github.com/ppoffice" target="_blank">
+                    <span class="level-left">
+                        <span class="level-item">PPOffice</span>
+                    </span>
+                    <span class="level-right">
+                        <span class="level-item tag">github.com</span>
+                    </span>
+                </a>
+            </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+
+
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                分类
+            </h3>
+            <ul class="menu-list">
+            <li>
+        <a class="level is-marginless" href="/categories/android/">
+            <span class="level-start">
+                <span class="level-item">android</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">4</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/android软键盘/">
+            <span class="level-start">
+                <span class="level-item">android软键盘</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">2</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/git/">
+            <span class="level-start">
+                <span class="level-item">git</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/java/">
+            <span class="level-start">
+                <span class="level-item">java</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/mvp/">
+            <span class="level-start">
+                <span class="level-item">mvp</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/repository/">
+            <span class="level-start">
+                <span class="level-item">repository</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/阿里巴巴Android开发手册/">
+            <span class="level-start">
+                <span class="level-item">阿里巴巴Android开发手册</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li><li>
+        <a class="level is-marginless" href="/categories/阿里巴巴Java开发手册/">
+            <span class="level-start">
+                <span class="level-item">阿里巴巴Java开发手册</span>
+            </span>
+            <span class="level-end">
+                <span class="level-item tag">1</span>
+            </span>
+        </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+    
+        
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            标签云
+        </h3>
+        <a href="/tags/android/" style="font-size: 20px;">android</a> <a href="/tags/git/" style="font-size: 10px;">git</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/java/" style="font-size: 15px;">java</a>
+    </div>
+</div>
+
+    
+    
+        <div class="column-right-shadow is-hidden-widescreen ">
+        
+            
+<div class="card widget">
+    <div class="card-content">
+        <h3 class="menu-label">
+            最新文章
+        </h3>
+        
+        <article class="media">
+            
+            <a href="/2019/05/20/我的开发仓库/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="我的开发仓库">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-20T06:35:20.000Z">2019-05-20</time></div>
+                    <a href="/2019/05/20/我的开发仓库/" class="has-link-black-ter is-size-6">我的开发仓库</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/repository/">repository</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/20/阿里巴巴Java开发手册/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="阿里巴巴Java开发手册">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-20T03:40:18.000Z">2019-05-20</time></div>
+                    <a href="/2019/05/20/阿里巴巴Java开发手册/" class="has-link-black-ter is-size-6">阿里巴巴Java开发手册</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/阿里巴巴Java开发手册/">阿里巴巴Java开发手册</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/20/阿里巴巴Android开发手册/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="阿里巴巴Android开发手册">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-20T03:37:59.000Z">2019-05-20</time></div>
+                    <a href="/2019/05/20/阿里巴巴Android开发手册/" class="has-link-black-ter is-size-6">阿里巴巴Android开发手册</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/阿里巴巴Android开发手册/">阿里巴巴Android开发手册</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/20/Android-MVP架构/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Android MVP架构">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-20T02:22:05.000Z">2019-05-20</time></div>
+                    <a href="/2019/05/20/Android-MVP架构/" class="has-link-black-ter is-size-6">Android MVP架构</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/mvp/">mvp</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+        <article class="media">
+            
+            <a href="/2019/05/20/Android弹出软键盘android-windowSoftInputMode设置/" class="media-left">
+                <p class="image is-64x64">
+                    <img class="thumbnail" src="/images/thumbnail.svg" alt="Android弹出软键盘android:windowSoftInputMode设置">
+                </p>
+            </a>
+            
+            <div class="media-content">
+                <div class="content">
+                    <div><time class="has-text-grey is-size-7 is-uppercase" datetime="2019-05-20T01:56:58.000Z">2019-05-20</time></div>
+                    <a href="/2019/05/20/Android弹出软键盘android-windowSoftInputMode设置/" class="has-link-black-ter is-size-6">Android弹出软键盘android:windowSoftInputMode设置</a>
+                    <p class="is-size-7 is-uppercase">
+                        <a class="has-link-grey -link" href="/categories/android软键盘/">android软键盘</a>
+                    </p>
+                </div>
+            </div>
+        </article>
+        
+    </div>
+</div>
+
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+        <h3 class="menu-label">
+            归档
+        </h3>
+        <ul class="menu-list">
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/05/">
+                <span class="level-start">
+                    <span class="level-item">五月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">9</span>
+                </span>
+            </a>
+        </li>
+        
+        <li>
+            <a class="level is-marginless" href="/archives/2019/04/">
+                <span class="level-start">
+                    <span class="level-item">四月 2019</span>
+                </span>
+                <span class="level-end">
+                    <span class="level-item tag">4</span>
+                </span>
+            </a>
+        </li>
+        
+        </ul>
+        </div>
+    </div>
+</div>
+        
+            <div class="card widget">
+    <div class="card-content">
+        <div class="menu">
+            <h3 class="menu-label">
+                标签
+            </h3>
+            <div class="field is-grouped is-grouped-multiline">
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/android/">
+                        <span class="tag">android</span>
+                        <span class="tag is-grey">9</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/git/">
+                        <span class="tag">git</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/http/">
+                        <span class="tag">http</span>
+                        <span class="tag is-grey">1</span>
+                    </a>
+                </div>
+                
+                <div class="control">
+                    <a class="tags has-addons" href="/tags/java/">
+                        <span class="tag">java</span>
+                        <span class="tag is-grey">2</span>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+        
+        </div>
+    
+</div>
+
+                
+
+
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+    <div class="container">
+        <div class="level">
+            <div class="level-start has-text-centered-mobile">
+                <a class="footer-logo is-block has-mb-6" href="/">
+                
+                    <img src="/images/logo.svg" alt="自己动手封装RecyclerView.Adapter" height="28">
+                
+                </a>
+                <p class="is-size-7">
+                &copy; 2019 kakrot&nbsp;
+                Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank">Icarus</a>
+                
+                </p>
+            </div>
+            <div class="level-end">
+            
+                <div class="field has-addons is-flex-center-mobile has-mt-5-mobile is-flex-wrap is-flex-middle">
+                
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Creative Commons" href="https://creativecommons.org/">
+                        
+                        <i class="fab fa-creative-commons"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/">
+                        
+                        <i class="fab fa-creative-commons-by"></i>
+                        
+                    </a>
+                </p>
+                
+                <p class="control">
+                    <a class="button is-white is-large" target="_blank" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus">
+                        
+                        <i class="fab fa-github"></i>
+                        
+                    </a>
+                </p>
+                
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</footer>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script>
+<script>moment.locale("zh-CN");</script>
+
+
+    
+    
+    
+    <script src="/js/animation.js"></script>
+    
+
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@1.6.8/dist/js/lightgallery.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js" defer></script>
+    <script src="/js/gallery.js" defer></script>
+    
+
+    
+    
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/">Update
+            my browser now </a></p>
+    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/outdatedbrowser@1.1.5/outdatedbrowser/outdatedbrowser.min.js" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        outdatedBrowser({
+            bgColor: '#f25648',
+            color: '#ffffff',
+            lowerThan: 'flex'
+        });
+    });
+</script>
+
+
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.5/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    MathJax.Hub.Config({
+        'HTML-CSS': {
+            matchFontHeight: false
+        },
+        SVG: {
+            matchFontHeight: false
+        },
+        CommonHTML: {
+            matchFontHeight: false
+        },
+        tex2jax: {
+            inlineMath: [
+                ['$','$'],
+                ['\\(','\\)']
+            ]
+        }
+    });
+});
+</script>
+
+    
+    
+
+<a id="back-to-top" title="回到顶端" href="javascript:;">
+    <i class="fas fa-chevron-up"></i>
+</a>
+<script src="/js/back-to-top.js" defer></script>
+
+
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script>
+    <script src="/js/clipboard.js" defer></script>
+    
+
+    
+    
+    
+
+
+<script src="/js/main.js" defer></script>
+
+    
+    <div class="searchbox ins-search">
+    <div class="searchbox-container ins-search-container">
+        <div class="searchbox-input-wrapper">
+            <input type="text" class="searchbox-input ins-search-input" placeholder="想要查找什么...">
+            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="searchbox-result-wrapper ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        var INSIGHT_CONFIG = {
+            TRANSLATION: {
+                POSTS: '文章',
+                PAGES: '页面',
+                CATEGORIES: '分类',
+                TAGS: '标签',
+                UNTITLED: '(无标题)',
+            },
+            CONTENT_URL: '/content.json',
+        };
+        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+    })(window);
+</script>
+<script src="/js/insight.js" defer></script>
+<link rel="stylesheet" href="/css/search.css">
+<link rel="stylesheet" href="/css/insight.css">
+    
+</body>
+</html>
